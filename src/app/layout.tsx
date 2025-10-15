@@ -33,6 +33,8 @@ export default function RootLayout({
               <Link href="/leads" className="hover:underline">Leads</Link>
               <Link href="/activity" className="hover:underline">Activity</Link>
               <Link href="/chat" className="hover:underline">Chatbot</Link>
+              <Link href="/admin" className="hover:underline">Admin</Link>
+              <Link href="/marketing" className="hover:underline">Marketing</Link>
             </nav>
           </div>
         </header>

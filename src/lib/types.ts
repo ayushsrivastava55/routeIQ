@@ -38,3 +38,13 @@ export type ChatMessage = {
   timestamp: string;
 };
 
+export type Email = {
+  id: string;
+  leadId: string;
+  subject: string;
+  snippet?: string;
+  body: string;
+  from: string;
+  to: string;
+  timestamp: string; // ISO
+};

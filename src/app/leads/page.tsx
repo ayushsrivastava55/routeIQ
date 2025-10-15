@@ -1,34 +1,27 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { Lead } from "@/lib/types";
 
 type Filters = {
-  potentialMin: number;
-  potentialMax: number;
-  status: string;
-  from: string;
-  to: string;
+  potentialMin: number; // thresholds via chips
+  status: string; // '', new, contacted, waiting_reply, qualified, won, lost
+  datePreset: "any" | "7d" | "30d" | "month";
 };
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(false);
-  const [filters, setFilters] = useState<Filters>({
-    potentialMin: 0,
-    potentialMax: 100,
-    status: "",
-    from: "",
-    to: "",
-  });
+  const [filters, setFilters] = useState<Filters>({ potentialMin: 0, status: "", datePreset: "any" });
 
   const qs = useMemo(() => {
     const params = new URLSearchParams();
     params.set("potentialMin", String(filters.potentialMin));
-    params.set("potentialMax", String(filters.potentialMax));
     if (filters.status) params.set("status", filters.status);
-    if (filters.from) params.set("from", filters.from);
-    if (filters.to) params.set("to", filters.to);
+    const { from, to } = toDateRange(filters.datePreset);
+    if (from) params.set("from", from);
+    if (to) params.set("to", to);
     return params.toString();
   }, [filters]);
 
@@ -80,63 +73,43 @@ function FiltersBar({
   setFilters: (f: Filters) => void;
 }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-5 gap-2 border rounded p-3 border-black/10 dark:border-white/10">
-      <div>
-        <label className="block text-xs mb-1">Potential Min</label>
-        <input
-          type="number"
-          min={0}
-          max={100}
-          value={filters.potentialMin}
-          onChange={(e) => setFilters({ ...filters, potentialMin: Number(e.target.value) })}
-          className="w-full border rounded px-2 py-1 bg-transparent"
-        />
-      </div>
-      <div>
-        <label className="block text-xs mb-1">Potential Max</label>
-        <input
-          type="number"
-          min={0}
-          max={100}
-          value={filters.potentialMax}
-          onChange={(e) => setFilters({ ...filters, potentialMax: Number(e.target.value) })}
-          className="w-full border rounded px-2 py-1 bg-transparent"
-        />
-      </div>
-      <div>
-        <label className="block text-xs mb-1">Status</label>
-        <select
-          value={filters.status}
-          onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-          className="w-full border rounded px-2 py-1 bg-transparent"
-        >
-          <option value="">All</option>
-          <option value="new">New</option>
-          <option value="contacted">Contacted</option>
-          <option value="waiting_reply">Waiting on reply</option>
-          <option value="qualified">Qualified</option>
-          <option value="won">Won</option>
-          <option value="lost">Lost</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-xs mb-1">From</label>
-        <input
-          type="date"
-          value={filters.from}
-          onChange={(e) => setFilters({ ...filters, from: e.target.value })}
-          className="w-full border rounded px-2 py-1 bg-transparent"
-        />
-      </div>
-      <div>
-        <label className="block text-xs mb-1">To</label>
-        <input
-          type="date"
-          value={filters.to}
-          onChange={(e) => setFilters({ ...filters, to: e.target.value })}
-          className="w-full border rounded px-2 py-1 bg-transparent"
-        />
-      </div>
+    <div className="flex flex-wrap items-center gap-3 border rounded p-3 border-black/10 dark:border-white/10">
+      <div className="text-xs opacity-70">Potential</div>
+      <Chip onClick={() => setFilters({ ...filters, potentialMin: 0 })} active={filters.potentialMin === 0}>All</Chip>
+      <Chip onClick={() => setFilters({ ...filters, potentialMin: 50 })} active={filters.potentialMin === 50}>50+</Chip>
+      <Chip onClick={() => setFilters({ ...filters, potentialMin: 70 })} active={filters.potentialMin === 70}>70+</Chip>
+      <Chip onClick={() => setFilters({ ...filters, potentialMin: 85 })} active={filters.potentialMin === 85}>85+</Chip>
+
+      <div className="w-px h-6 bg-black/10 dark:bg-white/10 mx-1" />
+
+      <div className="text-xs opacity-70">Status</div>
+      {[
+        ["", "All"],
+        ["new", "New"],
+        ["contacted", "Contacted"],
+        ["waiting_reply", "Waiting"],
+        ["qualified", "Qualified"],
+        ["won", "Won"],
+        ["lost", "Lost"],
+      ].map(([val, label]) => (
+        <Chip key={val} onClick={() => setFilters({ ...filters, status: val })} active={filters.status === val}>
+          {label}
+        </Chip>
+      ))}
+
+      <div className="w-px h-6 bg-black/10 dark:bg-white/10 mx-1" />
+
+      <div className="text-xs opacity-70">Date</div>
+      {([
+        ["any", "Any time"],
+        ["7d", "Last 7 days"],
+        ["30d", "Last 30 days"],
+        ["month", "This month"],
+      ] as const).map(([val, label]) => (
+        <Chip key={val} onClick={() => setFilters({ ...filters, datePreset: val })} active={filters.datePreset === val}>
+          {label}
+        </Chip>
+      ))}
     </div>
   );
 }
@@ -152,6 +125,7 @@ function LeadsTable({
   onResend: (l: Lead) => void;
   onNotify: (l: Lead) => void;
 }) {
+  const router = useRouter();
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full text-sm">
@@ -182,7 +156,7 @@ function LeadsTable({
             </tr>
           ) : (
             leads.map((l) => (
-              <tr key={l.id} className="border-b border-black/5 dark:border-white/5">
+              <tr key={l.id} className="border-b border-black/5 dark:border-white/5 hover:bg-black/[.02] dark:hover:bg-white/[.03] cursor-pointer" onClick={() => router.push(`/leads/${l.id}`)}>
                 <td className="py-2 pr-4">
                   <div className="font-medium">{l.name}</div>
                   <div className="text-xs opacity-70">{l.email}</div>
@@ -202,14 +176,14 @@ function LeadsTable({
                 <td className="py-2 pr-4 space-x-2">
                   {(l.status === "waiting_reply" || l.status === "contacted") && (
                     <button
-                      onClick={() => onResend(l)}
+                      onClick={(e) => { e.stopPropagation(); onResend(l); }}
                       className="px-2 py-1 rounded border border-black/10 dark:border-white/10 hover:bg-black/[.03] dark:hover:bg-white/[.07]"
                     >
                       Resend
                     </button>
                   )}
                   <button
-                    onClick={() => onNotify(l)}
+                    onClick={(e) => { e.stopPropagation(); onNotify(l); }}
                     className="px-2 py-1 rounded border border-black/10 dark:border-white/10 hover:bg-black/[.03] dark:hover:bg-white/[.07]"
                   >
                     Notify
@@ -222,4 +196,30 @@ function LeadsTable({
       </table>
     </div>
   );
+}
+
+function Chip({ children, onClick, active }: { children: React.ReactNode; onClick: () => void; active?: boolean }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-2 py-1 rounded-full text-xs border ${active ? "bg-black text-white dark:bg-white dark:text-black border-transparent" : "border-black/10 dark:border-white/10 hover:bg-black/[.03] dark:hover:bg-white/[.04]"}`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function toDateRange(preset: Filters["datePreset"]): { from?: string; to?: string } {
+  const now = new Date();
+  if (preset === "any") return {};
+  if (preset === "7d") {
+    const from = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    return { from: from.toISOString().slice(0, 10), to: now.toISOString().slice(0, 10) };
+  }
+  if (preset === "30d") {
+    const from = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    return { from: from.toISOString().slice(0, 10), to: now.toISOString().slice(0, 10) };
+  }
+  const from = new Date(now.getFullYear(), now.getMonth(), 1);
+  return { from: from.toISOString().slice(0, 10), to: now.toISOString().slice(0, 10) };
 }

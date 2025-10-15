@@ -1,7 +1,7 @@
 // Simple in-memory store for demo purposes.
 // Resets on server restart. Replace with DB in production.
 
-import type { Activity, Lead } from "@/lib/types";
+import type { Activity, Lead, Email } from "@/lib/types";
 
 let LEADS: Lead[] = [
   {
@@ -49,6 +49,39 @@ const ACTIVITY: Activity[] = [
   },
 ];
 
+const EMAILS: Email[] = [
+  {
+    id: crypto.randomUUID(),
+    leadId: "L-1001",
+    subject: "Intro: Acme x RouteIQ",
+    snippet: "Hi Alice, thanks for your interest...",
+    body: "Hi Alice,\n\nThanks for your interest in RouteIQ. Here’s how we automate your lead-to-revenue ops...\n\nBest,\nSam",
+    from: "sam@routeiq.app",
+    to: "alice@acme.com",
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 20).toISOString(),
+  },
+  {
+    id: crypto.randomUUID(),
+    leadId: "L-1001",
+    subject: "Follow-up: Quick call?",
+    snippet: "Circling back on automation...",
+    body: "Hi Alice,\n\nCircling back to see if you had a chance to review the workflow example. Happy to set up a 15-min call.\n\nThanks,\nSam",
+    from: "sam@routeiq.app",
+    to: "alice@acme.com",
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
+  },
+  {
+    id: crypto.randomUUID(),
+    leadId: "L-1002",
+    subject: "Intro: Globex growth ops",
+    snippet: "Bob, here’s how we route leads...",
+    body: "Hey Bob,\n\nWe can route leads, auto-enrich, and notify Slack in under a second. Attaching a sample.\n\nCheers,\nLi",
+    from: "li@routeiq.app",
+    to: "bob@globex.com",
+    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 40).toISOString(),
+  },
+];
+
 export function getLeads() {
   return LEADS;
 }
@@ -63,4 +96,14 @@ export function getActivity() {
 
 export function addActivity(a: Activity) {
   ACTIVITY.unshift(a);
+}
+
+export function getLeadById(id: string) {
+  return LEADS.find((l) => l.id === id);
+}
+
+export function getEmailsByLead(leadId: string) {
+  return EMAILS.filter((e) => e.leadId === leadId).sort(
+    (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+  );
 }
