@@ -1,30 +1,32 @@
 import { NextResponse } from "next/server";
-import { loadLeads, saveLeads, pushActivity } from "@/lib/persist";
+import { pushActivity } from "@/lib/persist";
+import { Composio } from "@/lib/composio";
 
 // Simple assignment rules:
 // - potential >= 85 → 'sam'
 // - potential >= 70 → 'li'
 // - else → 'queue'
 export async function POST() {
-  const leads = loadLeads();
-  const updated = leads.map((l) => {
-    const prev = l.owner;
-    if (l.potential >= 85) l.owner = "sam";
-    else if (l.potential >= 70) l.owner = "li";
-    else l.owner = "queue";
-    if (l.owner !== prev) {
-      pushActivity({
-        id: crypto.randomUUID(),
-        type: "lead_assigned",
-        leadId: l.id,
-        message: `Assigned to ${l.owner}`,
-        timestamp: new Date().toISOString(),
-        status: "success",
-      });
+  try {
+    const leads = await Composio.listLeads({});
+    const changes: { id: string; owner: string }[] = [];
+    for (const l of leads) {
+      const target = l.potential >= 85 ? "sam" : l.potential >= 70 ? "li" : "queue";
+      if (l.owner !== target) {
+        await Composio.assignOwner(l.id, target);
+        pushActivity({
+          id: crypto.randomUUID(),
+          type: "lead_assigned",
+          leadId: l.id,
+          message: `Assigned to ${target}`,
+          timestamp: new Date().toISOString(),
+          status: "success",
+        });
+        changes.push({ id: l.id, owner: target });
+      }
     }
-    return l;
-  });
-  saveLeads(updated);
-  return NextResponse.json({ ok: true, leads: updated });
+    return NextResponse.json({ ok: true, changes });
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 501 });
+  }
 }
-

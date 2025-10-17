@@ -15,7 +15,7 @@ export const Composio = {
     return true;
   },
 
-  // CRM: Fetch leads via plugin system, fallback to local store
+  // CRM: Fetch leads via plugin system only (no local fallback)
   async listLeads(query?: {
     potentialMin?: number;
     potentialMax?: number;
@@ -25,33 +25,34 @@ export const Composio = {
   }): Promise<Lead[]> {
     const real = getRealComposio();
     if (real && real.crm?.listLeads) {
-      try {
-        return await real.crm.listLeads({
-          potentialMin: query?.potentialMin ?? 0,
-          potentialMax: query?.potentialMax ?? 100,
-          status: query?.status ?? undefined,
-          from: query?.from ?? undefined,
-          to: query?.to ?? undefined,
-        });
-      } catch {
-        // fall through to local fallback
-      }
+      return await real.crm.listLeads({
+        potentialMin: query?.potentialMin ?? 0,
+        potentialMax: query?.potentialMax ?? 100,
+        status: query?.status ?? undefined,
+        from: query?.from ?? undefined,
+        to: query?.to ?? undefined,
+      });
     }
-    const { loadLeads } = await import("./persist");
-    const leads = loadLeads();
-    const potentialMin = query?.potentialMin ?? 0;
-    const potentialMax = query?.potentialMax ?? 100;
-    const status = query?.status ?? undefined;
-    const from = query?.from ?? undefined;
-    const to = query?.to ?? undefined;
-    return leads.filter((l) => {
-      const pOk = l.potential >= potentialMin && l.potential <= potentialMax;
-      const sOk = status ? l.status === status : true;
-      const created = new Date(l.createdAt).getTime();
-      const fOk = from ? created >= new Date(from).getTime() : true;
-      const tOk = to ? created <= new Date(to).getTime() : true;
-      return pOk && sOk && fOk && tOk;
-    });
+    throw new Error("CRM not configured: set COMPOSIO_API_KEY and implement crm.listLeads");
+  },
+
+  async getLeadById(id: string): Promise<Lead | null> {
+    const real = getRealComposio();
+    if (real?.crm?.getLeadById) {
+      return await real.crm.getLeadById(id);
+    }
+    // As a fallback within CRM context, try listing and finding locally from CRM results
+    const all = await this.listLeads({});
+    return all.find((l) => l.id === id) ?? null;
+  },
+
+  async assignOwner(leadId: string, owner: string): Promise<void> {
+    const real = getRealComposio();
+    if (real?.crm?.assignOwner) {
+      await real.crm.assignOwner(leadId, owner);
+      return;
+    }
+    throw new Error("CRM owner assignment not configured");
   },
 
   async sendIntroEmail(lead: Lead): Promise<Activity> {

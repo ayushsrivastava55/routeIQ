@@ -1,9 +1,8 @@
 import fs from "fs";
 import path from "path";
-import type { Activity, Email, Lead } from "@/lib/types";
+import type { Activity, Email } from "@/lib/types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
-const LEADS_FILE = path.join(DATA_DIR, "leads.json");
 const ACTIVITY_FILE = path.join(DATA_DIR, "activity.json");
 const EMAILS_FILE = path.join(DATA_DIR, "emails.json");
 
@@ -27,13 +26,6 @@ function writeJson<T>(file: string, data: T) {
   fs.writeFileSync(file, JSON.stringify(data, null, 2), "utf-8");
 }
 
-export function loadLeads(): Lead[] {
-  return readJson<Lead[]>(LEADS_FILE, defaultLeads());
-}
-export function saveLeads(leads: Lead[]) {
-  writeJson(LEADS_FILE, leads);
-}
-
 export function loadActivity(): Activity[] {
   return readJson<Activity[]>(ACTIVITY_FILE, []);
 }
@@ -50,47 +42,6 @@ export function emailsByLead(leadId: string): Email[] {
   return loadEmails()
     .filter((e) => e.leadId === leadId)
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-}
-
-export function leadById(id: string): Lead | undefined {
-  return loadLeads().find((l) => l.id === id);
-}
-
-function defaultLeads(): Lead[] {
-  return [
-    {
-      id: "L-1001",
-      name: "Alice Johnson",
-      email: "alice@acme.com",
-      company: "Acme Co",
-      potential: 85,
-      status: "waiting_reply",
-      owner: "sam",
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-      lastContactAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(),
-    },
-    {
-      id: "L-1002",
-      name: "Bob Smith",
-      email: "bob@globex.com",
-      company: "Globex",
-      potential: 62,
-      status: "contacted",
-      owner: "li",
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5).toISOString(),
-      lastContactAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-    },
-    {
-      id: "L-1003",
-      name: "Carol Lee",
-      email: "carol@initech.io",
-      company: "Initech",
-      potential: 92,
-      status: "new",
-      owner: "sam",
-      createdAt: new Date().toISOString(),
-    },
-  ];
 }
 
 function defaultEmails(): Email[] {
@@ -127,4 +78,3 @@ function defaultEmails(): Email[] {
     },
   ];
 }
-

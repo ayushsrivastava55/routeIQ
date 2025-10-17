@@ -15,6 +15,8 @@ type RealClient = {
       from?: string;
       to?: string;
     }) => Promise<Lead[]>;
+    getLeadById: (id: string) => Promise<Lead | null>;
+    assignOwner: (id: string, owner: string) => Promise<void>;
   };
 };
 
@@ -44,6 +46,13 @@ export function getRealComposio(): RealClient | null {
         // Implement via CRM toolkit (e.g., HubSpot/Salesforce) through Composio
         // Return array of Lead matching `src/lib/types.ts`
         return [];
+      },
+      async getLeadById(_id) {
+        // Implement via CRM toolkit lookup
+        return null;
+      },
+      async assignOwner(_id, _owner) {
+        // Implement via CRM toolkit owner assignment
       },
     },
   };

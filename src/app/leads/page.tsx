@@ -28,8 +28,12 @@ export default function LeadsPage() {
   useEffect(() => {
     setLoading(true);
     fetch(`/api/leads?${qs}`)
-      .then((r) => r.json())
-      .then((d) => setLeads(d.leads))
+      .then(async (r) => {
+        if (!r.ok) throw new Error(await r.text());
+        return r.json();
+      })
+      .then((d) => setLeads(Array.isArray(d.leads) ? d.leads : []))
+      .catch(() => setLeads([]))
       .finally(() => setLoading(false));
   }, [qs]);
 
@@ -41,7 +45,13 @@ export default function LeadsPage() {
           className="px-3 py-2 rounded border border-black/10 dark:border-white/10 hover:bg-black/[.03] dark:hover:bg-white/[.07] text-sm"
           onClick={async () => {
             await fetch("/api/leads/assign", { method: "POST" });
-            fetch(`/api/leads?${qs}`).then((r) => r.json()).then((d) => setLeads(d.leads));
+            fetch(`/api/leads?${qs}`)
+              .then(async (r) => {
+                if (!r.ok) throw new Error(await r.text());
+                return r.json();
+              })
+              .then((d) => setLeads(Array.isArray(d.leads) ? d.leads : []))
+              .catch(() => setLeads([]));
           }}
         >
           Run assignment
@@ -57,8 +67,12 @@ export default function LeadsPage() {
     if (res.ok) {
       // refetch
       fetch(`/api/leads?${qs}`)
-        .then((r) => r.json())
-        .then((d) => setLeads(d.leads));
+        .then(async (r) => {
+          if (!r.ok) throw new Error(await r.text());
+          return r.json();
+        })
+        .then((d) => setLeads(Array.isArray(d.leads) ? d.leads : []))
+        .catch(() => setLeads([]));
     }
   }
 

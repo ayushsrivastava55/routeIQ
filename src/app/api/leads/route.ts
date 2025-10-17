@@ -9,13 +9,19 @@ export async function GET(req: Request) {
   const from = searchParams.get("from");
   const to = searchParams.get("to");
 
-  const leads = await Composio.listLeads({
-    potentialMin,
-    potentialMax,
-    status,
-    from,
-    to,
-  });
-
-  return NextResponse.json({ leads });
+  try {
+    const leads = await Composio.listLeads({
+      potentialMin,
+      potentialMax,
+      status,
+      from,
+      to,
+    });
+    return NextResponse.json({ leads });
+  } catch (err) {
+    return NextResponse.json(
+      { error: (err as Error).message },
+      { status: 501 }
+    );
+  }
 }
