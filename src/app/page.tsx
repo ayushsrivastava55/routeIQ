@@ -11,9 +11,13 @@ export default function Home() {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card title="Leads" href="/leads" desc="Filter by potential, date, status, and resend follow-ups." />
+        <Card title="Leads" href="/leads" desc="Filter by potential, date, status; open a lead to view emails and activity." />
         <Card title="Activity" href="/activity" desc="Unified log of cross-tool actions and outcomes." />
         <Card title="Chatbot" href="/chat" desc="Command tools via a simple assistant (stubbed)." />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card title="Admin KPIs" href="/admin" desc="Response times, success rates, status distribution." />
+        <Card title="Marketing KPIs" href="/marketing" desc="Emails by day and engagement trends." />
       </div>
     </div>
   );

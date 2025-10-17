@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -18,11 +19,15 @@ export const metadata: Metadata = {
   description: "Lead-to-revenue automation UI (Composio)",
 };
 
-export default function RootLayout({
+import RoleSwitcher from "@/components/RoleSwitcher";
+
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const role = cookieStore.get("role")?.value || "user";
   return (
     <html lang="en">
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-white text-black dark:bg-black dark:text-white`}>
@@ -36,6 +41,7 @@ export default function RootLayout({
               <Link href="/admin" className="hover:underline">Admin</Link>
               <Link href="/marketing" className="hover:underline">Marketing</Link>
             </nav>
+            <RoleSwitcher initialRole={role} />
           </div>
         </header>
         <main className="mx-auto max-w-6xl p-4">{children}</main>

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getLeads } from "../_store";
+import { Composio } from "@/lib/composio";
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -9,15 +9,13 @@ export async function GET(req: Request) {
   const from = searchParams.get("from");
   const to = searchParams.get("to");
 
-  const leads = getLeads().filter((l) => {
-    const pOk = l.potential >= potentialMin && l.potential <= potentialMax;
-    const sOk = status ? l.status === status : true;
-    const created = new Date(l.createdAt).getTime();
-    const fOk = from ? created >= new Date(from).getTime() : true;
-    const tOk = to ? created <= new Date(to).getTime() : true;
-    return pOk && sOk && fOk && tOk;
+  const leads = await Composio.listLeads({
+    potentialMin,
+    potentialMax,
+    status,
+    from,
+    to,
   });
 
   return NextResponse.json({ leads });
 }
-

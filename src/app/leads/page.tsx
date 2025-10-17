@@ -36,6 +36,17 @@ export default function LeadsPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-xl font-semibold">Leads</h1>
+      <div className="flex items-center gap-2">
+        <button
+          className="px-3 py-2 rounded border border-black/10 dark:border-white/10 hover:bg-black/[.03] dark:hover:bg-white/[.07] text-sm"
+          onClick={async () => {
+            await fetch("/api/leads/assign", { method: "POST" });
+            fetch(`/api/leads?${qs}`).then((r) => r.json()).then((d) => setLeads(d.leads));
+          }}
+        >
+          Run assignment
+        </button>
+      </div>
       <FiltersBar filters={filters} setFilters={setFilters} />
       <LeadsTable leads={leads} loading={loading} onResend={handleResend} onNotify={handleNotify} />
     </div>

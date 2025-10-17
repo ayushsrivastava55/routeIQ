@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { addActivity, getActivity } from "../_store";
+import { loadActivity, pushActivity } from "@/lib/persist";
 import type { Activity } from "@/lib/types";
 
 export async function GET() {
-  return NextResponse.json({ activity: getActivity() });
+  return NextResponse.json({ activity: loadActivity() });
 }
 
 export async function POST(req: Request) {
@@ -17,6 +17,6 @@ export async function POST(req: Request) {
     status: body.status ?? "success",
     meta: body.meta ?? {},
   };
-  addActivity(a);
+  pushActivity(a);
   return NextResponse.json({ ok: true, activity: a });
 }

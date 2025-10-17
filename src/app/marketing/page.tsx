@@ -31,6 +31,14 @@ export default function MarketingPage() {
         <KPI title="Open Rate" value="—" subtitle="Needs ESP events" />
         <KPI title="Audience Sync" value="—" subtitle="Connect Ads tooling" />
       </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card title="Emails Sent by Day">
+          <MiniLine data={metrics.emailsByDay} />
+        </Card>
+        <Card title="Lead Engagement (last 14d)">
+          <MiniLine data={metrics.engagedByDay} />
+        </Card>
+      </div>
     </div>
   );
 }
@@ -39,7 +47,11 @@ function computeMarketing(leads: Lead[], activity: Activity[]) {
   const emailsSent = activity.filter((a) => a.type === "email_sent" || a.type === "followup_resend").length;
   const engaged = leads.filter((l) => l.status === "contacted" || l.status === "qualified").length;
   const resends = activity.filter((a) => a.type === "followup_resend").length;
-  return { emailsSent, engaged, resends };
+  const now = Date.now();
+  const last14 = Array.from({ length: 14 }).map((_, i) => new Date(now - (13 - i) * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+  const emailsByDay = last14.map((key) => ({ label: key.slice(5), value: activity.filter((a) => a.timestamp.slice(0, 10) === key && (a.type === "email_sent" || a.type === "followup_resend")).length }));
+  const engagedByDay = last14.map((key) => ({ label: key.slice(5), value: leads.filter((l) => l.status !== "new" && l.createdAt.slice(0, 10) <= key).length }));
+  return { emailsSent, engaged, resends, emailsByDay, engagedByDay };
 }
 
 function KPI({ title, value, subtitle }: { title: string; value: string; subtitle?: string }) {
@@ -52,3 +64,25 @@ function KPI({ title, value, subtitle }: { title: string; value: string; subtitl
   );
 }
 
+function Card({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded border border-black/10 dark:border-white/10 p-4">
+      <div className="text-sm font-medium mb-2">{title}</div>
+      {children}
+    </div>
+  );
+}
+
+function MiniLine({ data }: { data: { label: string; value: number }[] }) {
+  const max = Math.max(1, ...data.map((d) => d.value));
+  const points = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * 100;
+    const y = 100 - (d.value / max) * 100;
+    return `${x},${y}`;
+  });
+  return (
+    <svg viewBox="0 0 100 100" className="w-full h-32">
+      <polyline fill="none" stroke="currentColor" strokeWidth="2" points={points.join(" ")} />
+    </svg>
+  );
+}

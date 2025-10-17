@@ -1,0 +1,10 @@
+[
+  {
+    "id": "8fe80a62-3946-45a6-8b31-b33eaa7e63ea",
+    "type": "lead_assigned",
+    "leadId": "L-1002",
+    "message": "Assigned to queue",
+    "timestamp": "2025-10-17T12:21:39.987Z",
+    "status": "success"
+  }
+]

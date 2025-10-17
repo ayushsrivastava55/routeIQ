@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { getEmailsByLead, getLeadById } from "@/app/api/_store";
+import { emailsByLead, leadById } from "@/lib/persist";
 
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  const lead = getLeadById(params.id);
+  const lead = leadById(params.id);
   if (!lead) return NextResponse.json({ error: "Lead not found" }, { status: 404 });
-  const emails = getEmailsByLead(lead.id);
+  const emails = emailsByLead(lead.id);
   return NextResponse.json({ emails });
 }
-

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
-import { addActivity, getLeads, setLeads } from "@/app/api/_store";
 import { Composio } from "@/lib/composio";
+import { loadLeads, saveLeads, pushActivity } from "@/lib/persist";
 
 export async function POST(
   _req: Request,
   { params }: { params: { id: string } }
 ) {
   const id = params.id;
-  const leads = getLeads();
+  const leads = loadLeads();
   const lead = leads.find((l) => l.id === id);
   if (!lead) {
     return NextResponse.json({ error: "Lead not found" }, { status: 404 });
@@ -15,12 +15,12 @@ export async function POST(
 
   await Composio.init();
   const activity = await Composio.resendFollowup(lead);
-  addActivity(activity);
+  pushActivity(activity);
 
   // Update lastContactAt and status to waiting_reply
   lead.lastContactAt = new Date().toISOString();
   lead.status = "waiting_reply";
-  setLeads([...leads]);
+  saveLeads([...leads]);
 
   return NextResponse.json({ ok: true, activity });
 }

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "L-1001",
+    "name": "Alice Johnson",
+    "email": "alice@acme.com",
+    "company": "Acme Co",
+    "potential": 85,
+    "status": "waiting_reply",
+    "owner": "sam",
+    "createdAt": "2025-10-14T12:21:39.986Z",
+    "lastContactAt": "2025-10-16T12:21:39.986Z"
+  },
+  {
+    "id": "L-1002",
+    "name": "Bob Smith",
+    "email": "bob@globex.com",
+    "company": "Globex",
+    "potential": 62,
+    "status": "contacted",
+    "owner": "queue",
+    "createdAt": "2025-10-12T12:21:39.986Z",
+    "lastContactAt": "2025-10-15T12:21:39.986Z"
+  },
+  {
+    "id": "L-1003",
+    "name": "Carol Lee",
+    "email": "carol@initech.io",
+    "company": "Initech",
+    "potential": 92,
+    "status": "new",
+    "owner": "sam",
+    "createdAt": "2025-10-17T12:21:39.986Z"
+  }
+]
