@@ -4,6 +4,7 @@
 
 import type { Activity, Lead } from "./types";
 import { getRealComposio } from "./composioClient";
+import { Composio as ComposioSDK } from "@composio/core";
 
 export type ComposioContext = {
   userId?: string;
@@ -115,3 +116,12 @@ export const Composio = {
     };
   },
 };
+
+// Shared Composio SDK singleton for routes that interact with real toolkits
+let __sdk: InstanceType<typeof ComposioSDK> | null = null;
+export function getComposio() {
+  if (!__sdk) {
+    __sdk = new ComposioSDK({ apiKey: process.env.COMPOSIO_API_KEY || undefined });
+  }
+  return __sdk;
+}

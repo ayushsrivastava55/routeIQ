@@ -30,22 +30,39 @@ export default async function RootLayout({
   const role = cookieStore.get("role")?.value || "user";
   return (
     <html lang="en">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-white text-black dark:bg-black dark:text-white`}>
-        <header className="border-b border-black/10 dark:border-white/10">
-          <div className="mx-auto max-w-6xl flex items-center justify-between p-4">
-            <Link href="/" className="font-semibold">RouteIQ</Link>
-            <nav className="flex gap-4 text-sm">
-              <Link href="/leads" className="hover:underline">Leads</Link>
-              <Link href="/activity" className="hover:underline">Activity</Link>
-              <Link href="/chat" className="hover:underline">Chatbot</Link>
-              <Link href="/admin" className="hover:underline">Admin</Link>
-              <Link href="/marketing" className="hover:underline">Marketing</Link>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen`} style={{ background: 'var(--background)', color: 'var(--foreground)' }}>
+        <header className="sticky top-0 z-50 backdrop-blur-sm bg-[var(--surface)]/80 shadow-sm" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="mx-auto max-w-7xl flex items-center justify-between px-6 py-4">
+            <Link href="/" className="text-lg font-semibold tracking-tight" style={{ color: 'var(--primary)' }}>
+              RouteIQ
+            </Link>
+            <nav className="flex items-center gap-1 text-sm">
+              <NavLink href="/leads">Leads</NavLink>
+              <NavLink href="/activity">Activity</NavLink>
+              <NavLink href="/chat">Chat</NavLink>
+              <NavLink href="/admin">Admin</NavLink>
+              <NavLink href="/marketing">Marketing</NavLink>
+              <NavLink href="/apps">Apps</NavLink>
             </nav>
-            <RoleSwitcher initialRole={role} />
+            <div className="flex items-center gap-3">
+              <RoleSwitcher initialRole={role} />
+            </div>
           </div>
         </header>
-        <main className="mx-auto max-w-6xl p-4">{children}</main>
+        <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
       </body>
     </html>
+  );
+}
+
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  return (
+    <Link
+      href={href}
+      className="px-3 py-2 rounded-md text-sm font-medium transition-colors hover:bg-[var(--primary-light)] hover:text-[var(--primary)]"
+      style={{ color: 'var(--foreground-muted)' }}
+    >
+      {children}
+    </Link>
   );
 }

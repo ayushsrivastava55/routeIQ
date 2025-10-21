@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
     const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/apps`;
 
     const composio = getComposio();
-    const connectionRequest = await composio.connectedAccounts.initiate(userId, authConfigId, { callbackUrl });
+    // Use Connect Link per Composio docs to reliably get a redirectUrl
+    const connectionRequest = await composio.connectedAccounts.link(userId, authConfigId, { callbackUrl });
 
     return NextResponse.json(connectionRequest, { status: 200 });
   } catch (error) {

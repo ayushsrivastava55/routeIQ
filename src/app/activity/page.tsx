@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { Activity } from "@/src/lib/types";
+import type { Activity } from "@/lib/types";
 
 export default function ActivityPage() {
   const [items, setItems] = useState<Activity[]>([]);
@@ -56,4 +56,3 @@ export default function ActivityPage() {
 function formatType(t: string) {
   return t.replaceAll("_", " ");
 }
-

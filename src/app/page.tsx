@@ -2,35 +2,86 @@ import Link from "next/link";
 
 export default function Home() {
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-semibold">RouteIQ</h1>
-      <p className="text-sm text-black/70 dark:text-white/70 max-w-2xl">
-        Lead-to-Revenue automation UI powered by Composio’s Tool Router. Fixes slow
-        responses, missed follow-ups, inefficient routing, and poor campaign ROI
-        visibility by orchestrating CRM, ESP, comms, and billing tools.
-      </p>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card title="Leads" href="/leads" desc="Filter by potential, date, status; open a lead to view emails and activity." />
-        <Card title="Activity" href="/activity" desc="Unified log of cross-tool actions and outcomes." />
-        <Card title="Chatbot" href="/chat" desc="Command tools via a simple assistant (stubbed)." />
+    <div className="space-y-10">
+      <div className="space-y-3">
+        <h1 className="text-4xl font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>
+          Welcome to RouteIQ
+        </h1>
+        <p className="text-lg max-w-3xl" style={{ color: 'var(--foreground-muted)' }}>
+          Lead-to-Revenue automation powered by Composio. Orchestrate your CRM, email, Slack, and billing tools with intelligent routing and real-time insights.
+        </p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card title="Admin KPIs" href="/admin" desc="Response times, success rates, status distribution." />
-        <Card title="Marketing KPIs" href="/marketing" desc="Emails by day and engagement trends." />
+
+      <div>
+        <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--foreground-muted)' }}>
+          Core Features
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <Card 
+            title="Leads" 
+            href="/leads" 
+            desc="Browse, filter, and manage your leads with smart potential scoring and owner assignment."
+            icon="📊"
+          />
+          <Card 
+            title="Activity Feed" 
+            href="/activity" 
+            desc="Real-time log of all actions across HubSpot, Gmail, Slack, Stripe, and DocuSign."
+            icon="📝"
+          />
+          <Card 
+            title="AI Assistant" 
+            href="/chat" 
+            desc="Natural language commands to resend emails, notify Slack, or create invoices instantly."
+            icon="💬"
+          />
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--foreground-muted)' }}>
+          Analytics & Insights
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <Card 
+            title="Admin Dashboard" 
+            href="/admin" 
+            desc="Response times, conversion rates, and status distribution at a glance."
+            icon="📈"
+          />
+          <Card 
+            title="Marketing Metrics" 
+            href="/marketing" 
+            desc="Email engagement trends, campaign performance, and lead generation insights."
+            icon="📧"
+          />
+        </div>
       </div>
     </div>
   );
 }
 
-function Card({ title, desc, href }: { title: string; desc: string; href: string }) {
+function Card({ title, desc, href, icon }: { title: string; desc: string; href: string; icon: string }) {
   return (
     <Link
       href={href}
-      className="block rounded-lg border border-black/10 dark:border-white/10 p-4 hover:bg-black/[.03] dark:hover:bg-white/[.03]"
+      className="group block rounded-xl p-6 transition-all hover:shadow-lg"
+      style={{ 
+        background: 'var(--surface)', 
+        border: '1px solid var(--border)',
+      }}
     >
-      <div className="font-medium">{title}</div>
-      <div className="text-sm text-black/70 dark:text-white/70">{desc}</div>
+      <div className="flex items-start gap-4">
+        <div className="text-3xl">{icon}</div>
+        <div className="flex-1 space-y-2">
+          <h3 className="font-semibold text-lg group-hover:text-[var(--primary)] transition-colors" style={{ color: 'var(--foreground)' }}>
+            {title}
+          </h3>
+          <p className="text-sm leading-relaxed" style={{ color: 'var(--foreground-muted)' }}>
+            {desc}
+          </p>
+        </div>
+      </div>
     </Link>
   );
 }

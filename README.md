@@ -2,19 +2,50 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+### 1. Install Dependencies
+
+```bash
+npm install
+```
+
+### 2. Set Up Environment Variables
+
+**⚠️ IMPORTANT:** You must configure Composio before the app will work.
+
+Create a `.env.local` file in the root directory:
+
+```bash
+# Required - Get from https://app.composio.dev/settings
+COMPOSIO_API_KEY=your_api_key_here
+
+# Optional
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+SLACK_DEFAULT_CHANNEL=#sales-leads
+HUBSPOT_OWNER_MAP={"sam":"12345","li":"67890","queue":"11111"}
+```
+
+**📖 See [ENV_SETUP.md](./ENV_SETUP.md) for detailed setup instructions.**
+
+### 3. Run the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+### 4. Connect Your Apps
+
+1. Visit http://localhost:3000/apps
+2. Enter your User ID (email or unique identifier)
+3. Click **Connect** for each integration:
+   - **HubSpot** (required for leads)
+   - **Gmail** (required for emails)
+   - **Slack** (optional for notifications)
+   - **Stripe** (optional for invoicing)
+   - **DocuSign** (optional for contracts)
+
+**📖 Full setup guide:** [ENV_SETUP.md](./ENV_SETUP.md)
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
@@ -35,12 +66,57 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## RouteIQ UI (This Project)
+## RouteIQ Features
 
-- Leads: Filter by potential, date range, and status; quick actions for resend and Slack notify to reduce slow responses and missed follow-ups.
-- Activity: Unified activity log for tool actions (email sent, Slack notified, invoices), improving visibility into campaign ROI and operations.
-- Chatbot: Basic command UI with stubs for Composio-powered actions (e.g., `resend L-1001`, `notify L-1001`, `invoice L-1002 500`).
+### 🎯 Leads Management
+Filter by potential score, date range, and status. Quick actions for email resend and Slack notifications to reduce response times and follow-up delays.
 
-Notes:
-- APIs use an in-memory store for demo purposes (`src/app/api/_store.ts`). Replace with a database and real `@composio/core` integrations per PRD.
-- Composio usage is stubbed in `src/lib/composio.ts` and referenced by API routes; wire real toolkits (HubSpot, Mailchimp, Slack, Stripe, DocuSign) as you proceed with Phase 1 of the PRD.
+### 📊 Activity Feed
+Unified log of all cross-tool actions (emails sent, Slack notifications, invoices created) for complete campaign visibility.
+
+### 💬 AI Assistant
+Natural language command interface for instant actions (resend emails, notify Slack, create invoices).
+
+### 📈 Analytics Dashboards
+- **Admin View:** Response times, conversion rates, status distribution
+- **Marketing View:** Email engagement, campaign performance, lead quality
+
+### 🔌 Integrations (via Composio)
+- **HubSpot** - CRM and contact management
+- **Gmail** - Email viewing and sending
+- **Slack** - Team notifications
+- **Stripe** - Invoicing and payments
+- **DocuSign** - Contract sending
+
+---
+
+## Architecture
+
+- **Frontend:** Next.js 15 with App Router, React 19, TailwindCSS
+- **Backend:** Next.js API routes with Composio SDK integration
+- **Integrations:** Composio `proxyExecute` for direct SaaS API calls
+- **State:** In-memory activity store (replace with DB for production)
+- **Auth:** Per-user OAuth via Composio connected accounts
+
+---
+
+## Project Structure
+
+```
+routeiq/
+├── src/
+│   ├── app/
+│   │   ├── api/           # API routes (leads, notify, deals, etc.)
+│   │   ├── leads/         # Lead management UI
+│   │   ├── activity/      # Activity feed
+│   │   ├── chat/          # AI assistant
+│   │   ├── admin/         # Admin dashboard
+│   │   ├── marketing/     # Marketing dashboard
+│   │   └── apps/          # App connection manager
+│   ├── lib/
+│   │   ├── composio.ts    # Composio client
+│   │   ├── persist.ts     # Activity storage
+│   │   └── types.ts       # TypeScript types
+│   └── components/        # Reusable UI components
+├── ENV_SETUP.md          # Environment setup guide
+└── PRD.md                # Product requirements

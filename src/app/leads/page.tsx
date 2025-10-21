@@ -27,7 +27,8 @@ export default function LeadsPage() {
 
   useEffect(() => {
     setLoading(true);
-    fetch(`/api/leads?${qs}`)
+    const uid = typeof window !== "undefined" ? localStorage.getItem("routeiq_userId") : null;
+    fetch(`/api/leads?userId=${encodeURIComponent(String(uid || ""))}&${qs}`)
       .then(async (r) => {
         if (!r.ok) throw new Error(await r.text());
         return r.json();
@@ -38,14 +39,19 @@ export default function LeadsPage() {
   }, [qs]);
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-semibold">Leads</h1>
-      <div className="flex items-center gap-2">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>Leads</h1>
+          <p className="text-sm mt-1" style={{ color: 'var(--foreground-muted)' }}>Manage and qualify your pipeline</p>
+        </div>
         <button
-          className="px-3 py-2 rounded border border-black/10 dark:border-white/10 hover:bg-black/[.03] dark:hover:bg-white/[.07] text-sm"
+          className="px-4 py-2 rounded-lg text-sm font-medium transition-all hover:shadow-md"
+          style={{ background: 'var(--accent)', color: 'white' }}
           onClick={async () => {
-            await fetch("/api/leads/assign", { method: "POST" });
-            fetch(`/api/leads?${qs}`)
+            const uid = typeof window !== "undefined" ? localStorage.getItem("routeiq_userId") : null;
+            await fetch("/api/leads/assign", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId: uid }) });
+            fetch(`/api/leads?userId=${encodeURIComponent(String(uid || ""))}&${qs}`)
               .then(async (r) => {
                 if (!r.ok) throw new Error(await r.text());
                 return r.json();
@@ -54,7 +60,7 @@ export default function LeadsPage() {
               .catch(() => setLeads([]));
           }}
         >
-          Run assignment
+          ⚡ Run Assignment
         </button>
       </div>
       <FiltersBar filters={filters} setFilters={setFilters} />
@@ -63,7 +69,8 @@ export default function LeadsPage() {
   );
 
   async function handleResend(lead: Lead) {
-    const res = await fetch(`/api/leads/${lead.id}/resend`, { method: "POST" });
+    const userId = typeof window !== "undefined" ? localStorage.getItem("routeiq_userId") : null;
+    const res = await fetch(`/api/leads/${lead.id}/resend`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId }) });
     if (res.ok) {
       // refetch
       fetch(`/api/leads?${qs}`)
@@ -77,16 +84,9 @@ export default function LeadsPage() {
   }
 
   async function handleNotify(lead: Lead) {
-    await fetch("/api/activity", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        type: "slack_notified",
-        leadId: lead.id,
-        message: `Notified #sales about ${lead.name}`,
-        status: "success",
-      }),
-    });
+    const userId = typeof window !== "undefined" ? localStorage.getItem("routeiq_userId") : null;
+    const text = `New lead: ${lead.name} <${lead.email}> (${lead.company ?? "-"})`;
+    await fetch("/api/notify/slack", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, text }) });
   }
 }
 
@@ -98,16 +98,16 @@ function FiltersBar({
   setFilters: (f: Filters) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 border rounded p-3 border-black/10 dark:border-white/10">
-      <div className="text-xs opacity-70">Potential</div>
+    <div className="flex flex-wrap items-center gap-4 rounded-xl p-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+      <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--foreground-muted)' }}>Potential</div>
       <Chip onClick={() => setFilters({ ...filters, potentialMin: 0 })} active={filters.potentialMin === 0}>All</Chip>
       <Chip onClick={() => setFilters({ ...filters, potentialMin: 50 })} active={filters.potentialMin === 50}>50+</Chip>
       <Chip onClick={() => setFilters({ ...filters, potentialMin: 70 })} active={filters.potentialMin === 70}>70+</Chip>
       <Chip onClick={() => setFilters({ ...filters, potentialMin: 85 })} active={filters.potentialMin === 85}>85+</Chip>
 
-      <div className="w-px h-6 bg-black/10 dark:bg-white/10 mx-1" />
+      <div className="w-px h-6" style={{ background: 'var(--border)' }} />
 
-      <div className="text-xs opacity-70">Status</div>
+      <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--foreground-muted)' }}>Status</div>
       {[
         ["", "All"],
         ["new", "New"],
@@ -122,9 +122,9 @@ function FiltersBar({
         </Chip>
       ))}
 
-      <div className="w-px h-6 bg-black/10 dark:bg-white/10 mx-1" />
+      <div className="w-px h-6" style={{ background: 'var(--border)' }} />
 
-      <div className="text-xs opacity-70">Date</div>
+      <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--foreground-muted)' }}>Date</div>
       {([
         ["any", "Any time"],
         ["7d", "Last 7 days"],
@@ -152,67 +152,71 @@ function LeadsTable({
 }) {
   const router = useRouter();
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full text-sm">
+    <div className="rounded-xl overflow-hidden" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+      <table className="min-w-full">
         <thead>
-          <tr className="text-left border-b border-black/10 dark:border-white/10">
-            <th className="py-2 pr-4">Lead</th>
-            <th className="py-2 pr-4">Company</th>
-            <th className="py-2 pr-4">Potential</th>
-            <th className="py-2 pr-4">Status</th>
-            <th className="py-2 pr-4">Owner</th>
-            <th className="py-2 pr-4">Created</th>
-            <th className="py-2 pr-4">Last Contact</th>
-            <th className="py-2 pr-4">Actions</th>
+          <tr className="text-left text-xs font-semibold uppercase tracking-wide" style={{ background: 'var(--background)', color: 'var(--foreground-muted)', borderBottom: '1px solid var(--border)' }}>
+            <th className="py-4 px-6">Lead</th>
+            <th className="py-4 px-6">Company</th>
+            <th className="py-4 px-6">Score</th>
+            <th className="py-4 px-6">Status</th>
+            <th className="py-4 px-6">Owner</th>
+            <th className="py-4 px-6">Created</th>
+            <th className="py-4 px-6">Last Contact</th>
+            <th className="py-4 px-6">Actions</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody className="text-sm">
           {loading ? (
             <tr>
-              <td colSpan={8} className="py-6 text-center opacity-70">
-                Loading...
+              <td colSpan={8} className="py-12 text-center" style={{ color: 'var(--foreground-muted)' }}>
+                Loading leads...
               </td>
             </tr>
           ) : leads.length === 0 ? (
             <tr>
-              <td colSpan={8} className="py-6 text-center opacity-70">
-                No leads
+              <td colSpan={8} className="py-12 text-center" style={{ color: 'var(--foreground-muted)' }}>
+                No leads found
               </td>
             </tr>
           ) : (
             leads.map((l) => (
-              <tr key={l.id} className="border-b border-black/5 dark:border-white/5 hover:bg-black/[.02] dark:hover:bg-white/[.03] cursor-pointer" onClick={() => router.push(`/leads/${l.id}`)}>
-                <td className="py-2 pr-4">
-                  <div className="font-medium">{l.name}</div>
-                  <div className="text-xs opacity-70">{l.email}</div>
+              <tr key={l.id} className="cursor-pointer transition-colors" style={{ borderBottom: '1px solid var(--border)' }} onClick={() => router.push(`/leads/${l.id}`)}>
+                <td className="py-4 px-6">
+                  <div className="font-semibold" style={{ color: 'var(--foreground)' }}>{l.name}</div>
+                  <div className="text-xs mt-0.5" style={{ color: 'var(--foreground-muted)' }}>{l.email}</div>
                 </td>
-                <td className="py-2 pr-4">{l.company ?? "-"}</td>
-                <td className="py-2 pr-4">
-                  <span className="inline-block px-2 py-0.5 rounded bg-black/5 dark:bg-white/10">
-                    {l.potential}
-                  </span>
+                <td className="py-4 px-6" style={{ color: 'var(--foreground-muted)' }}>{l.company ?? "-"}</td>
+                <td className="py-4 px-6">
+                  <PotentialBadge score={l.potential} />
                 </td>
-                <td className="py-2 pr-4 capitalize">{l.status.replace("_", " ")}</td>
-                <td className="py-2 pr-4">{l.owner ?? "-"}</td>
-                <td className="py-2 pr-4">{new Date(l.createdAt).toLocaleDateString()}</td>
-                <td className="py-2 pr-4">
+                <td className="py-4 px-6">
+                  <StatusBadge status={l.status} />
+                </td>
+                <td className="py-4 px-6" style={{ color: 'var(--foreground-muted)' }}>{l.owner ?? "-"}</td>
+                <td className="py-4 px-6" style={{ color: 'var(--foreground-muted)' }}>{new Date(l.createdAt).toLocaleDateString()}</td>
+                <td className="py-4 px-6" style={{ color: 'var(--foreground-muted)' }}>
                   {l.lastContactAt ? new Date(l.lastContactAt).toLocaleString() : "-"}
                 </td>
-                <td className="py-2 pr-4 space-x-2">
-                  {(l.status === "waiting_reply" || l.status === "contacted") && (
+                <td className="py-4 px-6">
+                  <div className="flex items-center gap-2">
+                    {(l.status === "waiting_reply" || l.status === "contacted") && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onResend(l); }}
+                        className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                        style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}
+                      >
+                        Resend
+                      </button>
+                    )}
                     <button
-                      onClick={(e) => { e.stopPropagation(); onResend(l); }}
-                      className="px-2 py-1 rounded border border-black/10 dark:border-white/10 hover:bg-black/[.03] dark:hover:bg-white/[.07]"
+                      onClick={(e) => { e.stopPropagation(); onNotify(l); }}
+                      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+                      style={{ border: '1px solid var(--border)', color: 'var(--foreground-muted)' }}
                     >
-                      Resend
+                      Notify
                     </button>
-                  )}
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onNotify(l); }}
-                    className="px-2 py-1 rounded border border-black/10 dark:border-white/10 hover:bg-black/[.03] dark:hover:bg-white/[.07]"
-                  >
-                    Notify
-                  </button>
+                  </div>
                 </td>
               </tr>
             ))
@@ -227,10 +231,41 @@ function Chip({ children, onClick, active }: { children: React.ReactNode; onClic
   return (
     <button
       onClick={onClick}
-      className={`px-2 py-1 rounded-full text-xs border ${active ? "bg-black text-white dark:bg-white dark:text-black border-transparent" : "border-black/10 dark:border-white/10 hover:bg-black/[.03] dark:hover:bg-white/[.04]"}`}
+      className="px-3 py-1.5 rounded-lg text-xs font-medium transition-all"
+      style={{
+        background: active ? 'var(--primary)' : 'transparent',
+        color: active ? 'white' : 'var(--foreground-muted)',
+        border: active ? 'none' : '1px solid var(--border)',
+      }}
     >
       {children}
     </button>
+  );
+}
+
+function PotentialBadge({ score }: { score: number }) {
+  const color = score >= 85 ? 'var(--success)' : score >= 70 ? 'var(--primary)' : score >= 50 ? 'var(--warning)' : 'var(--error)';
+  return (
+    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold" style={{ background: `${color}20`, color }}>
+      {score}
+    </span>
+  );
+}
+
+function StatusBadge({ status }: { status: string }) {
+  const statusColors: Record<string, string> = {
+    new: 'var(--info)',
+    contacted: 'var(--primary)',
+    waiting_reply: 'var(--warning)',
+    qualified: 'var(--accent)',
+    won: 'var(--success)',
+    lost: 'var(--error)',
+  };
+  const color = statusColors[status] || 'var(--foreground-muted)';
+  return (
+    <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold capitalize" style={{ background: `${color}20`, color }}>
+      {status.replace('_', ' ')}
+    </span>
   );
 }
 

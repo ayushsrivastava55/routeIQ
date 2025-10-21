@@ -8,7 +8,8 @@ export default function MarketingPage() {
   const [activity, setActivity] = useState<Activity[]>([]);
 
   useEffect(() => {
-    Promise.all([fetch("/api/leads"), fetch("/api/activity")])
+    const userId = typeof window !== "undefined" ? localStorage.getItem("routeiq_userId") : null;
+    Promise.all([fetch(`/api/leads?userId=${encodeURIComponent(String(userId || ""))}`), fetch("/api/activity")])
       .then(async ([l, a]) => [await l.json(), await a.json()])
       .then(([l, a]) => {
         setLeads(l.leads || []);

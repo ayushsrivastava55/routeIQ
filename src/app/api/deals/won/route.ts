@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getComposio } from "@/lib/composio";
+import { pushActivity } from "@/lib/persist";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,31 +27,28 @@ export async function POST(request: NextRequest) {
 
     const composio = getComposio();
 
-    const accounts = await composio.connectedAccounts.list({ userIds: [userId] });
-    const items = accounts?.items || [];
-    const stripeAcc = items.find((a: any) => a?.toolkit?.slug?.toLowerCase() === "stripe");
-    const docusignAcc = items.find((a: any) => a?.toolkit?.slug?.toLowerCase() === "docusign");
-    const slackAcc = items.find((a: any) => a?.toolkit?.slug?.toLowerCase() === "slack");
-    if (!stripeAcc?.id) return NextResponse.json({ error: "stripe connected account not found" }, { status: 400 });
-
     let customerId: string | null = null;
-    const search = await composio.tools.proxyExecute({
-      endpoint: "/v1/customers/search",
-      method: "GET",
-      connectedAccountId: stripeAcc.id,
-      parameters: [
-        { name: "query", value: `email:'${email}'`, in: "query" },
-      ],
+    const search = await (composio.tools as any).proxyExecute({
+      toolkitSlug: "stripe",
+      userId,
+      data: {
+        endpoint: "/v1/customers/search",
+        method: "GET",
+        params: { query: `email:'${email}'` },
+      },
     });
     const found = (search as any)?.data?.data?.[0];
     if (found?.id) {
       customerId = found.id;
     } else {
-      const created = await composio.tools.proxyExecute({
-        endpoint: "/v1/customers",
-        method: "POST",
-        connectedAccountId: stripeAcc.id,
-        body: { email, name: customerName || email },
+      const created = await (composio.tools as any).proxyExecute({
+        toolkitSlug: "stripe",
+        userId,
+        data: {
+          endpoint: "/v1/customers",
+          method: "POST",
+          body: { email, name: customerName || email },
+        },
       });
       customerId = (created as any)?.data?.id || null;
     }
@@ -58,55 +56,96 @@ export async function POST(request: NextRequest) {
     if (!customerId) return NextResponse.json({ error: "failed to resolve stripe customer" }, { status: 500 });
 
     const amountCents = Math.round(Number(amount) * 100);
-    await composio.tools.proxyExecute({
-      endpoint: "/v1/invoiceitems",
-      method: "POST",
-      connectedAccountId: stripeAcc.id,
-      body: { customer: customerId, amount: amountCents, currency, description },
+    await (composio.tools as any).proxyExecute({
+      toolkitSlug: "stripe",
+      userId,
+      data: {
+        endpoint: "/v1/invoiceitems",
+        method: "POST",
+        body: { customer: customerId, amount: amountCents, currency, description },
+      },
     });
 
-    const invoiceCreate = await composio.tools.proxyExecute({
-      endpoint: "/v1/invoices",
-      method: "POST",
-      connectedAccountId: stripeAcc.id,
-      body: { customer: customerId, collection_method: "send_invoice", days_until_due: 14 },
+    const invoiceCreate = await (composio.tools as any).proxyExecute({
+      toolkitSlug: "stripe",
+      userId,
+      data: {
+        endpoint: "/v1/invoices",
+        method: "POST",
+        body: { customer: customerId, collection_method: "send_invoice", days_until_due: 14 },
+      },
     });
 
     const invoiceId = (invoiceCreate as any)?.data?.id;
     let finalizedInvoice: any = null;
     if (invoiceId) {
-      finalizedInvoice = await composio.tools.proxyExecute({
-        endpoint: `/v1/invoices/${invoiceId}/finalize`,
-        method: "POST",
-        connectedAccountId: stripeAcc.id,
+      finalizedInvoice = await (composio.tools as any).proxyExecute({
+        toolkitSlug: "stripe",
+        userId,
+        data: {
+          endpoint: `/v1/invoices/${invoiceId}/finalize`,
+          method: "POST",
+        },
+      });
+      pushActivity({
+        id: crypto.randomUUID(),
+        type: "invoice_created",
+        leadId: undefined,
+        message: `Stripe invoice created ${invoiceId}`,
+        timestamp: new Date().toISOString(),
+        status: "success",
+        meta: { invoiceId },
       });
     }
 
-    if (docusignAccountId && docusignTemplateId && recipientName && recipientEmail && docusignAcc?.id) {
+    if (docusignAccountId && docusignTemplateId && recipientName && recipientEmail) {
       try {
-        await composio.tools.proxyExecute({
-          endpoint: `/v2.1/accounts/${docusignAccountId}/envelopes`,
-          method: "POST",
-          connectedAccountId: docusignAcc.id,
-          body: {
-            templateId: docusignTemplateId,
-            status: "sent",
-            templateRoles: [
-              { roleName: docusignRoleName, name: recipientName, email: recipientEmail, tabs: docusignTabs },
-            ],
+        await (composio.tools as any).proxyExecute({
+          toolkitSlug: "docusign",
+          userId,
+          data: {
+            endpoint: `/v2.1/accounts/${docusignAccountId}/envelopes`,
+            method: "POST",
+            body: {
+              templateId: docusignTemplateId,
+              status: "sent",
+              templateRoles: [
+                { roleName: docusignRoleName, name: recipientName, email: recipientEmail, tabs: docusignTabs },
+              ],
+            },
           },
+        });
+        pushActivity({
+          id: crypto.randomUUID(),
+          type: "contract_sent",
+          leadId: undefined,
+          message: `DocuSign envelope sent to ${recipientEmail}`,
+          timestamp: new Date().toISOString(),
+          status: "success",
+          meta: { docusignTemplateId },
         });
       } catch {}
     }
 
-    if (slackChannel && slackAcc?.id) {
+    if (slackChannel) {
       try {
         const text = `Deal won for ${email}. Amount: ${amount} ${currency}. Invoice: ${invoiceId || "n/a"}.`;
-        await composio.tools.proxyExecute({
-          endpoint: "/chat.postMessage",
-          method: "POST",
-          connectedAccountId: slackAcc.id,
-          body: { channel: slackChannel, text },
+        await (composio.tools as any).proxyExecute({
+          toolkitSlug: "slack",
+          userId,
+          data: {
+            endpoint: "/chat.postMessage",
+            method: "POST",
+            body: { channel: slackChannel, text },
+          },
+        });
+        pushActivity({
+          id: crypto.randomUUID(),
+          type: "slack_notified",
+          leadId: undefined,
+          message: `Notified ${slackChannel} about won deal ${invoiceId || "n/a"}`,
+          timestamp: new Date().toISOString(),
+          status: "success",
         });
       } catch {}
     }

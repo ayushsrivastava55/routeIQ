@@ -15,9 +15,10 @@ export default function LeadDetailPage() {
   useEffect(() => {
     async function load() {
       setLoading(true);
+      const userId = typeof window !== "undefined" ? localStorage.getItem("routeiq_userId") : null;
       const [leadRes, emailRes, actRes] = await Promise.all([
-        fetch(`/api/leads/${params.id}`),
-        fetch(`/api/leads/${params.id}/emails`),
+        fetch(`/api/leads/${params.id}?userId=${encodeURIComponent(String(userId || ""))}`),
+        fetch(`/api/leads/${params.id}/emails?userId=${encodeURIComponent(String(userId || ""))}`),
         fetch(`/api/activity`),
       ]);
       const leadData = await leadRes.json();
@@ -94,25 +95,23 @@ export default function LeadDetailPage() {
   );
 
   async function resend(id: string) {
-    await fetch(`/api/leads/${id}/resend`, { method: "POST" });
+    const userId = typeof window !== "undefined" ? localStorage.getItem("routeiq_userId") : null;
+    await fetch(`/api/leads/${id}/resend`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId }) });
     const act = await fetch(`/api/activity`).then((r) => r.json());
     setActivity((act.activity || []).filter((a: Activity) => a.leadId === id));
   }
   async function notify(id: string) {
-    await fetch("/api/activity", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "slack_notified", leadId: id, message: "Notified #sales", status: "success" }),
-    });
+    const userId = typeof window !== "undefined" ? localStorage.getItem("routeiq_userId") : null;
+    const lead = await fetch(`/api/leads/${id}?userId=${encodeURIComponent(String(userId || ""))}`).then((r) => r.json()).then((d) => d.lead as Lead);
+    const text = `Lead update: ${lead.name} <${lead.email}> (${lead.company ?? "-"})`;
+    await fetch("/api/notify/slack", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, text }) });
     const act = await fetch(`/api/activity`).then((r) => r.json());
     setActivity((act.activity || []).filter((a: Activity) => a.leadId === id));
   }
   async function invoice(id: string, amount: number) {
-    await fetch("/api/activity", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ type: "invoice_created", leadId: id, message: `Invoice created $${amount}`, status: "success", meta: { amount } }),
-    });
+    const userId = typeof window !== "undefined" ? localStorage.getItem("routeiq_userId") : null;
+    const lead = await fetch(`/api/leads/${id}?userId=${encodeURIComponent(String(userId || ""))}`).then((r) => r.json()).then((d) => d.lead as Lead);
+    await fetch("/api/deals/won", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, email: lead.email, amount, description: `Invoice for ${lead.name}` }) });
     const act = await fetch(`/api/activity`).then((r) => r.json());
     setActivity((act.activity || []).filter((a: Activity) => a.leadId === id));
   }

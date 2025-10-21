@@ -64,7 +64,8 @@ async function handleCommand(input: string): Promise<ChatMessage> {
   try {
     if (lower.startsWith("resend ")) {
       const id = text.split(/\s+/)[1];
-      const res = await fetch(`/api/leads/${id}/resend`, { method: "POST" });
+      const userId = typeof window !== "undefined" ? localStorage.getItem("routeiq_userId") : null;
+      const res = await fetch(`/api/leads/${id}/resend`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId }) });
       if (!res.ok) throw new Error("Failed to resend");
       const data = await res.json();
       return makeAssistant(`Resent follow-up: ${data.activity?.message ?? "ok"}`);
@@ -74,17 +75,9 @@ async function handleCommand(input: string): Promise<ChatMessage> {
       const id = text.split(/\s+/)[1];
       const lead = await findLead(id);
       if (!lead) throw new Error("Lead not found");
-      // Just log activity for demo
-      await fetch("/api/activity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "slack_notified",
-          leadId: lead.id,
-          message: `Notified #sales about ${lead.name}`,
-          status: "success",
-        }),
-      });
+      const userId = typeof window !== "undefined" ? localStorage.getItem("routeiq_userId") : null;
+      const textMsg = `New lead: ${lead.name} <${lead.email}> (${lead.company ?? "-"})`;
+      await fetch("/api/notify/slack", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, text: textMsg }) });
       return makeAssistant(`Slack notified for ${lead.name}`);
     }
 
@@ -95,17 +88,8 @@ async function handleCommand(input: string): Promise<ChatMessage> {
       if (!Number.isFinite(amount)) throw new Error("Amount required");
       const lead = await findLead(id);
       if (!lead) throw new Error("Lead not found");
-      await fetch("/api/activity", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "invoice_created",
-          leadId: lead.id,
-          message: `Invoice created for ${lead.name} - $${amount}`,
-          status: "success",
-          meta: { amount },
-        }),
-      });
+      const userId = typeof window !== "undefined" ? localStorage.getItem("routeiq_userId") : null;
+      await fetch("/api/deals/won", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, email: lead.email, amount, description: `Invoice for ${lead.name}` }) });
       return makeAssistant(`Invoice created: $${amount} for ${lead.name}`);
     }
 
@@ -117,7 +101,8 @@ async function handleCommand(input: string): Promise<ChatMessage> {
 }
 
 async function findLead(id: string): Promise<Lead | undefined> {
-  const res = await fetch("/api/leads");
+  const userId = typeof window !== "undefined" ? localStorage.getItem("routeiq_userId") : null;
+  const res = await fetch(`/api/leads?userId=${encodeURIComponent(String(userId || ""))}`);
   const data = await res.json();
   const leads: Lead[] = data.leads;
   return leads.find((l) => l.id === id);
