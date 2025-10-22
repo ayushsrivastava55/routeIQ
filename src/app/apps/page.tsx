@@ -1,6 +1,8 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { Plug, Power, RefreshCw, Link as LinkIcon } from 'lucide-react';
 
 type AuthConfig = {
   id: string;
@@ -52,6 +54,7 @@ export default function AppsPage() {
       if (!res.ok) return;
       const data = await res.json();
       setAuthConfigs(Array.isArray(data.items) ? data.items : []);
+      toast.success('Loaded auth configs');
     } catch {}
   }
 
@@ -62,6 +65,7 @@ export default function AppsPage() {
       if (!res.ok) return setConnectedAccounts([]);
       const data = await res.json();
       setConnectedAccounts(Array.isArray(data.connectedAccounts) ? data.connectedAccounts : []);
+      toast.success('Refreshed connections');
     } catch {
       setConnectedAccounts([]);
     } finally {
@@ -83,6 +87,7 @@ export default function AppsPage() {
       if (data.redirectUrl) {
         window.open(data.redirectUrl, '_blank');
         setTimeout(() => fetchConnections(userId), 2000);
+        toast.info('Opened OAuth window');
       }
     } catch (e) {
       alert('Failed to connect');
@@ -100,6 +105,7 @@ export default function AppsPage() {
       });
       if (!res.ok) return alert('Failed to disconnect');
       setConnectedAccounts((prev) => prev.filter((a) => a.id !== accountId));
+      toast.success('Disconnected');
     } catch (e) {
       alert('Failed to disconnect');
     }
@@ -107,7 +113,7 @@ export default function AppsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-      <h1 className="text-2xl font-semibold">Apps</h1>
+      <h1 className="text-2xl font-semibold flex items-center gap-2"><Plug className="w-5 h-5" /> Apps</h1>
 
       <div className="flex gap-2 items-center">
         <input
@@ -119,11 +125,8 @@ export default function AppsPage() {
           placeholder="userId (email or UUID)"
           className="border rounded px-3 py-2 w-full max-w-sm"
         />
-        <button
-          onClick={() => userId && fetchConnections(userId)}
-          className="px-3 py-2 border rounded"
-        >
-          Refresh
+        <button onClick={() => userId && fetchConnections(userId)} className="px-3 py-2 border rounded flex items-center gap-2">
+          <RefreshCw className="w-4 h-4" /> Refresh
         </button>
       </div>
 
@@ -153,22 +156,12 @@ export default function AppsPage() {
                     </div>
                     <div>
                       {isConnected ? (
-                        <button
-                          onClick={() => {
-                            const acc = connectedAccounts.find((a) => a.toolkit?.slug?.toLowerCase() === slug.toLowerCase());
-                            if (acc?.id) disconnect(acc.id);
-                          }}
-                          className="px-3 py-2 border rounded"
-                        >
-                          Disconnect
+                        <button onClick={() => { const acc = connectedAccounts.find((a) => a.toolkit?.slug?.toLowerCase() === slug.toLowerCase()); if (acc?.id) disconnect(acc.id); }} className="px-3 py-2 border rounded flex items-center gap-2">
+                          <Power className="w-4 h-4" /> Disconnect
                         </button>
                       ) : (
-                        <button
-                          disabled={connecting === slug}
-                          onClick={() => connect(cfg.id, slug)}
-                          className="px-3 py-2 border rounded"
-                        >
-                          {connecting === slug ? 'Connecting...' : 'Connect'}
+                        <button disabled={connecting === slug} onClick={() => connect(cfg.id, slug)} className="px-3 py-2 border rounded flex items-center gap-2">
+                          <LinkIcon className="w-4 h-4" /> {connecting === slug ? 'Connecting...' : 'Connect'}
                         </button>
                       )}
                     </div>

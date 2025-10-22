@@ -3,6 +3,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -42,6 +43,7 @@ export default async function RootLayout({
               <NavLink href="/chat">Chat</NavLink>
               <NavLink href="/admin">Admin</NavLink>
               <NavLink href="/marketing">Marketing</NavLink>
+              <NavLink href="/router">Router</NavLink>
               <NavLink href="/apps">Apps</NavLink>
             </nav>
             <div className="flex items-center gap-3">
@@ -50,6 +52,7 @@ export default async function RootLayout({
           </div>
         </header>
         <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
+        <Toaster richColors position="top-right" />
       </body>
     </html>
   );

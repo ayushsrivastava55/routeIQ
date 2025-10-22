@@ -1,87 +1,134 @@
+"use client";
+
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { AnimatedGradient } from "@/components/ui/animated-gradient";
+import { Button } from "@/components/ui/button";
+import { BentoGrid, BentoCard } from "@/components/ui/bento-grid";
+import { ArrowRight, Sparkles, Zap, Workflow, BarChart3, MessageSquare, Plug } from "lucide-react";
 
 export default function Home() {
   return (
-    <div className="space-y-10">
-      <div className="space-y-3">
-        <h1 className="text-4xl font-bold tracking-tight" style={{ color: 'var(--foreground)' }}>
-          Welcome to RouteIQ
-        </h1>
-        <p className="text-lg max-w-3xl" style={{ color: 'var(--foreground-muted)' }}>
-          Lead-to-Revenue automation powered by Composio. Orchestrate your CRM, email, Slack, and billing tools with intelligent routing and real-time insights.
-        </p>
-      </div>
-
-      <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--foreground-muted)' }}>
-          Core Features
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <Card 
-            title="Leads" 
-            href="/leads" 
-            desc="Browse, filter, and manage your leads with smart potential scoring and owner assignment."
-            icon="📊"
-          />
-          <Card 
-            title="Activity Feed" 
-            href="/activity" 
-            desc="Real-time log of all actions across HubSpot, Gmail, Slack, Stripe, and DocuSign."
-            icon="📝"
-          />
-          <Card 
-            title="AI Assistant" 
-            href="/chat" 
-            desc="Natural language commands to resend emails, notify Slack, or create invoices instantly."
-            icon="💬"
-          />
-        </div>
-      </div>
-
-      <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wider mb-4" style={{ color: 'var(--foreground-muted)' }}>
-          Analytics & Insights
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <Card 
-            title="Admin Dashboard" 
-            href="/admin" 
-            desc="Response times, conversion rates, and status distribution at a glance."
-            icon="📈"
-          />
-          <Card 
-            title="Marketing Metrics" 
-            href="/marketing" 
-            desc="Email engagement trends, campaign performance, and lead generation insights."
-            icon="📧"
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function Card({ title, desc, href, icon }: { title: string; desc: string; href: string; icon: string }) {
-  return (
-    <Link
-      href={href}
-      className="group block rounded-xl p-6 transition-all hover:shadow-lg"
-      style={{ 
-        background: 'var(--surface)', 
-        border: '1px solid var(--border)',
-      }}
-    >
-      <div className="flex items-start gap-4">
-        <div className="text-3xl">{icon}</div>
-        <div className="flex-1 space-y-2">
-          <h3 className="font-semibold text-lg group-hover:text-[var(--primary)] transition-colors" style={{ color: 'var(--foreground)' }}>
-            {title}
-          </h3>
-          <p className="text-sm leading-relaxed" style={{ color: 'var(--foreground-muted)' }}>
-            {desc}
+    <>
+      <AnimatedGradient />
+      <div className="space-y-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center space-y-6 pt-12"
+        >
+          <motion.div
+            initial={{ scale: 0.9 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 text-sm font-medium text-blue-600 dark:text-blue-400"
+          >
+            <Sparkles className="w-4 h-4" />
+            Powered by Composio Tool Router
+          </motion.div>
+          
+          <h1 className="text-6xl font-bold tracking-tight bg-gradient-to-r from-gray-900 via-blue-800 to-purple-800 dark:from-gray-100 dark:via-blue-400 dark:to-purple-400 bg-clip-text text-transparent">
+            Lead-to-Revenue
+            <br />
+            Automation, Simplified
+          </h1>
+          
+          <p className="text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto">
+            Orchestrate your CRM, email, Slack, and billing tools with intelligent routing and real-time insights. No code required.
           </p>
-        </div>
+          
+          <div className="flex gap-4 justify-center">
+            <Link href="/onboarding">
+              <Button size="lg" className="group">
+                Get Started
+                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </Link>
+            <Link href="/router">
+              <Button variant="outline" size="lg">
+                Explore Router
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+
+        <BentoGrid>
+          <BentoCard colSpan={2}>
+            <Link href="/router" className="block h-full">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                  <Workflow className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold mb-2">Tool Router</h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Discover, plan, and execute multi-app workflows with COMPOSIO meta tools. Dynamic orchestration at your fingertips.
+                  </p>
+                </div>
+              </div>
+            </Link>
+          </BentoCard>
+
+          <BentoCard>
+            <Link href="/leads" className="block h-full">
+              <div className="space-y-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 text-white w-fit">
+                  <Zap className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-semibold">Leads</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
+                  Smart scoring and auto-assignment
+                </p>
+              </div>
+            </Link>
+          </BentoCard>
+
+          <BentoCard>
+            <Link href="/activity" className="block h-full">
+              <div className="space-y-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 text-white w-fit">
+                  <BarChart3 className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-semibold">Activity</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
+                  Real-time action logs
+                </p>
+              </div>
+            </Link>
+          </BentoCard>
+
+          <BentoCard colSpan={2}>
+            <Link href="/apps" className="block h-full">
+              <div className="flex items-start gap-4">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 text-white">
+                  <Plug className="w-6 h-6" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold mb-2">Connected Apps</h3>
+                  <p className="text-gray-600 dark:text-gray-400">
+                    Manage OAuth connections to HubSpot, Slack, Stripe, DocuSign, and more. One-click authentication.
+                  </p>
+                </div>
+              </div>
+            </Link>
+          </BentoCard>
+
+          <BentoCard>
+            <Link href="/chat" className="block h-full">
+              <div className="space-y-3">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 text-white w-fit">
+                  <MessageSquare className="w-6 h-6" />
+                </div>
+                <h3 className="text-xl font-semibold">AI Chat</h3>
+                <p className="text-gray-600 dark:text-gray-400 text-sm">
+                  Natural language commands
+                </p>
+              </div>
+            </Link>
+          </BentoCard>
+        </BentoGrid>
       </div>
-    </Link>
+    </>
   );
 }
