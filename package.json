@@ -13,9 +13,11 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.53",
     "@composio/core": "^0.1.55",
     "@modelcontextprotocol/sdk": "^1.20.1",
     "@neondatabase/serverless": "^1.0.2",
+    "ai": "^5.0.76",
     "clsx": "^2.1.1",
     "dotenv": "^17.2.3",
     "drizzle-kit": "^0.31.5",
@@ -28,7 +30,8 @@
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "sonner": "^1.5.0",
-    "tailwind-merge": "^2.5.5"
+    "tailwind-merge": "^2.5.5",
+    "zod": "^3.25.76"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

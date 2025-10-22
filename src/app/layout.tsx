@@ -39,12 +39,8 @@ export default async function RootLayout({
               RouteIQ
             </Link>
             <nav className="flex items-center gap-1 text-sm">
-              <NavLink href="/leads">Leads</NavLink>
-              <NavLink href="/activity">Activity</NavLink>
               <NavLink href="/chat">Chat</NavLink>
-              <NavLink href="/admin">Admin</NavLink>
-              <NavLink href="/marketing">Marketing</NavLink>
-              <NavLink href="/router">Router</NavLink>
+              <NavLink href="/leads">Leads</NavLink>
               <NavLink href="/apps">Apps</NavLink>
             </nav>
             <div className="flex items-center gap-3">
