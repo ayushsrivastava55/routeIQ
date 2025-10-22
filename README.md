@@ -10,23 +10,52 @@ npm install
 
 ### 2. Set Up Environment Variables
 
-**⚠️ IMPORTANT:** You must configure Composio before the app will work.
+**⚠️ IMPORTANT:** You must configure environment variables before the app will work.
 
-Create a `.env.local` file in the root directory:
+Create a `.env` file in the root directory (copy from `.env.example`):
 
 ```bash
-# Required - Get from https://app.composio.dev/settings
-COMPOSIO_API_KEY=your_api_key_here
+# Required - Neon Database
+DATABASE_URL=postgresql://username:password@ep-xxx.neon.tech/routeiq?sslmode=require
+
+# Required - OpenAI for AI Agent
+OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxx
+
+# Required - Composio for integrations
+COMPOSIO_API_KEY=your_composio_api_key_here
+
+# Optional - Connected accounts (configure after connecting apps)
+COMPOSIO_CRM_ACCOUNT_ID=conn_hubspot_xxxxx
+COMPOSIO_SLACK_ACCOUNT_ID=conn_slack_xxxxx
+COMPOSIO_GMAIL_ACCOUNT_ID=conn_gmail_xxxxx
+COMPOSIO_STRIPE_ACCOUNT_ID=conn_stripe_xxxxx
 
 # Optional
 NEXT_PUBLIC_APP_URL=http://localhost:3000
-SLACK_DEFAULT_CHANNEL=#sales-leads
-HUBSPOT_OWNER_MAP={"sam":"12345","li":"67890","queue":"11111"}
+SLACK_DEFAULT_CHANNEL=#sales
+HUBSPOT_OWNER_MAP={"Alice":"12345","Bob":"67890"}
 ```
 
-**📖 See [ENV_SETUP.md](./ENV_SETUP.md) for detailed setup instructions.**
+**📖 See [DATABASE_SETUP.md](./DATABASE_SETUP.md) for detailed database setup instructions.**
 
-### 3. Run the Development Server
+### 3. Set Up Database
+
+**⚠️ IMPORTANT:** RouteIQ now uses Neon PostgreSQL for data persistence.
+
+```bash
+# Generate and push database schema to Neon
+npm run db:push
+
+# (Optional) Seed sample data for testing
+npx tsx scripts/seed-sample-data.ts
+
+# (Optional) Open Drizzle Studio to view your data
+npm run db:studio
+```
+
+**📖 Full database setup guide:** [DATABASE_SETUP.md](./DATABASE_SETUP.md)
+
+### 4. Run the Development Server
 
 ```bash
 npm run dev
@@ -34,18 +63,62 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-### 4. Connect Your Apps
+### 5. Connect Your Apps (Optional)
 
 1. Visit http://localhost:3000/apps
 2. Enter your User ID (email or unique identifier)
 3. Click **Connect** for each integration:
-   - **HubSpot** (required for leads)
-   - **Gmail** (required for emails)
+   - **HubSpot** (optional for CRM sync)
+   - **Gmail** (optional for email sending)
    - **Slack** (optional for notifications)
    - **Stripe** (optional for invoicing)
    - **DocuSign** (optional for contracts)
 
 **📖 Full setup guide:** [ENV_SETUP.md](./ENV_SETUP.md)
+
+## Features
+
+### 🤖 AI Agent with OpenAI + Composio
+
+RouteIQ includes an intelligent AI agent powered by OpenAI GPT-4 with Composio integrations:
+
+- **Natural Language Interface**: Chat with the agent to manage leads, send emails, create invoices
+- **Function Calling**: Agent can execute actions using Composio tools
+- **Context Awareness**: Maintains conversation history and session state
+- **Multi-Tool Workflows**: Execute complex workflows across multiple apps
+
+**Example Usage:**
+```bash
+curl -X POST http://localhost:3000/api/agent/chat \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "user123",
+    "message": "Show me all qualified leads with score above 80"
+  }'
+```
+
+### 📊 Pagination Support
+
+All API endpoints now support pagination:
+
+- **Leads**: `/api/leads?page=1&limit=20&status=qualified`
+- **Activities**: `/api/activity?page=1&limit=50&leadId=L-1001`
+- Responses include pagination metadata (total, totalPages, hasNext, hasPrev)
+
+### 🗄️ Neon PostgreSQL Database
+
+- Persistent storage for leads, activities, emails
+- Efficient indexing for fast queries
+- Agent session and message history storage
+- Easy to manage with Drizzle ORM and Studio
+
+**Database Commands:**
+```bash
+npm run db:generate  # Generate migrations
+npm run db:push      # Push schema changes
+npm run db:migrate   # Run migrations
+npm run db:studio    # Open visual database browser
+```
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
