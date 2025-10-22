@@ -113,12 +113,16 @@ export default function ChatPage() {
           buffer = lines.pop() || ""; // keep incomplete
 
           for (const line of lines) {
-            if (!line) continue;
             if (line.startsWith("data: ")) {
-              // Our API emits tool-call/result as SSE 'data: {json}\n\n'
               try {
                 const evt = JSON.parse(line.slice(6));
-                if (evt.type === "tool-call") {
+                
+                if (evt.type === "text-delta" && typeof evt.delta === "string") {
+                  fullContent += evt.delta;
+                  setMessages((prev) =>
+                    prev.map((msg) => (msg.id === assistantId ? { ...msg, content: fullContent } : msg))
+                  );
+                } else if (evt.type === "tool-call") {
                   const tc: ToolCall = {
                     id: evt.toolCallId || `${Date.now()}_${Math.random()}`,
                     name: evt.toolName || "tool",
@@ -135,9 +139,7 @@ export default function ChatPage() {
                         : msg
                     )
                   );
-                  continue;
-                }
-                if (evt.type === "tool-result") {
+                } else if (evt.type === "tool-result") {
                   const existing = currentToolCalls.get(evt.toolCallId);
                   if (existing) {
                     existing.result = evt.result;
@@ -152,24 +154,12 @@ export default function ChatPage() {
                       )
                     );
                   }
-                  continue;
                 }
               } catch {
-                // ignore bad json; treat as text below
+                // Ignore parsing errors
               }
             }
-            // Any non-SSE line is assistant text content
-            fullContent += line;
-            setMessages((prev) =>
-              prev.map((msg) => (msg.id === assistantId ? { ...msg, content: fullContent } : msg))
-            );
           }
-        }
-        if (buffer.trim()) {
-          fullContent += buffer;
-          setMessages((prev) =>
-            prev.map((msg) => (msg.id === assistantId ? { ...msg, content: fullContent } : msg))
-          );
         }
       }
     } catch (error) {

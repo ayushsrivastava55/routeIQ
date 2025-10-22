@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { streamText, stepCountIs, experimental_createMCPClient as createMCPClient } from "ai";
+import { streamText, experimental_createMCPClient as createMCPClient } from "ai";
 import { openai } from "@ai-sdk/openai";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 import { Composio as ComposioSDK } from "@composio/core";
@@ -43,13 +43,15 @@ You have access to all Composio tools including:
 - And many more through the Composio integration
 
 **⚡ Important Rules:**
-1. ALWAYS provide clear, actionable responses
-2. Show details in a user-friendly format (not raw JSON)
-3. When listing leads, format them nicely with bullet points
-4. Confirm actions before execution if uncertain
-5. Provide step-by-step explanations for complex operations
-6. Use natural language in all responses
-7. If an action requires more info, ask the user clearly
+1. ALWAYS provide clear, actionable responses AFTER using tools
+2. After calling ANY tool, explain what you found or did in natural language
+3. Show details in a user-friendly format (not raw JSON)
+4. When listing leads, format them nicely with bullet points
+5. Confirm actions before execution if uncertain
+6. Provide step-by-step explanations for complex operations
+7. Use natural language in all responses
+8. If an action requires more info, ask the user clearly
+9. NEVER just call a tool without providing a text response afterward
 
 **🔄 Context Management:**
 - Remember previous conversations in the session
@@ -176,51 +178,88 @@ export async function POST(request: NextRequest) {
       searchAdvanced: searchAdvancedTool,
     };
 
-    // Create a custom stream so we can interleave tool-call events with text
     const stream = new ReadableStream({
       async start(controller) {
         try {
           const encoder = new TextEncoder();
+          
+          // First call: execute tools and collect results
           const result = await streamText({
             model: openai(modelId),
             tools: allTools,
             messages: historyMessages,
-            onStepFinish: async (step) => {
-              if (step.toolCalls && step.toolCalls.length > 0) {
-                for (const toolCall of step.toolCalls) {
-                  const payload = JSON.stringify({
-                    type: "tool-call",
-                    toolCallId: toolCall.toolCallId,
-                    toolName: toolCall.toolName,
-                    // args may not be typed on some versions; cast for safety
-                    args: (toolCall as any).args || {},
-                  });
-                  controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
-                  console.log("🛠️ Tool call:", toolCall.toolName);
-                }
-              }
-
-              if (step.toolResults && step.toolResults.length > 0) {
-                for (const toolResult of step.toolResults) {
-                  const payload = JSON.stringify({
-                    type: "tool-result",
-                    toolCallId: toolResult.toolCallId,
-                    result: (toolResult as any).result,
-                  });
-                  controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
-                  console.log("✅ Tool result:", toolResult.toolCallId);
-                }
-              }
-            },
           });
 
-          for await (const chunk of result.textStream) {
-            controller.enqueue(encoder.encode(chunk));
+          const toolCalls: any[] = [];
+          const toolResults: any[] = [];
+          let hadToolCalls = false;
+
+          // Stream all events including multiple rounds of tool calls
+          for await (const part of result.fullStream) {
+            if (part.type === 'text-delta') {
+              const payload = JSON.stringify({ type: "text-delta", delta: (part as any).text });
+              controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+            } else if (part.type === 'tool-call') {
+              hadToolCalls = true;
+              const toolCall = {
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                args: (part as any).input || {},
+              };
+              toolCalls.push(toolCall);
+              
+              const payload = JSON.stringify({
+                type: "tool-call",
+                ...toolCall,
+              });
+              controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+            } else if (part.type === 'tool-result') {
+              const toolResult = {
+                toolCallId: part.toolCallId,
+                toolName: part.toolName,
+                result: (part as any).output,
+              };
+              toolResults.push(toolResult);
+              
+              const payload = JSON.stringify({
+                type: "tool-result",
+                toolCallId: toolResult.toolCallId,
+                result: toolResult.result,
+              });
+              controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+            }
+          }
+
+          // Fallback: if tools were used but no text was generated, make a summary call
+          if (hadToolCalls && toolResults.length > 0) {
+            const summaryMessages = [
+              ...historyMessages,
+              {
+                role: "assistant" as const,
+                content: `I've executed ${toolResults.length} tool(s). Here are the results: ${JSON.stringify(toolResults)}. Now I'll provide a natural language summary.`
+              },
+              {
+                role: "user" as const,
+                content: "Please provide a clear, natural language summary of what you found or did. Format any data nicely for the user."
+              }
+            ];
+
+            const summaryResult = await streamText({
+              model: openai(modelId),
+              messages: summaryMessages,
+            });
+
+            // Stream the summary
+            for await (const part of summaryResult.fullStream) {
+              if (part.type === 'text-delta') {
+                const payload = JSON.stringify({ type: "text-delta", delta: (part as any).text });
+                controller.enqueue(encoder.encode(`data: ${payload}\n\n`));
+              }
+            }
           }
 
           controller.close();
         } catch (err) {
-          // surface error to client
           controller.error(err);
         }
       },
