@@ -6,30 +6,40 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "next": "15.5.5",
     "@composio/core": "^0.1.55",
     "@modelcontextprotocol/sdk": "^0.6.0",
-    "lucide-react": "^0.475.0",
-    "sonner": "^1.5.0",
-    "framer-motion": "^11.15.0",
+    "@neondatabase/serverless": "^1.0.2",
     "clsx": "^2.1.1",
-    "tailwind-merge": "^2.5.5",
-    "eventsource": "^2.0.2"
+    "dotenv": "^17.2.3",
+    "drizzle-kit": "^0.31.5",
+    "drizzle-orm": "^0.44.6",
+    "eventsource": "^2.0.2",
+    "framer-motion": "^11.15.0",
+    "lucide-react": "^0.475.0",
+    "next": "15.5.5",
+    "openai": "^6.6.0",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "sonner": "^1.5.0",
+    "tailwind-merge": "^2.5.5"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.5.5",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "tsx": "^4.20.6",
+    "typescript": "^5"
   }
 }
