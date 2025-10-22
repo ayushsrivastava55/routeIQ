@@ -21,6 +21,7 @@ export const metadata: Metadata = {
 };
 
 import RoleSwitcher from "@/components/RoleSwitcher";
+import OnboardingBanner from "@/components/OnboardingBanner";
 
 export default async function RootLayout({
   children,
@@ -51,6 +52,7 @@ export default async function RootLayout({
             </div>
           </div>
         </header>
+        <OnboardingBanner />
         <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
         <Toaster richColors position="top-right" />
       </body>

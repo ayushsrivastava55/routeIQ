@@ -5,17 +5,11 @@ export type MCPClientHandle = {
 };
 
 export async function connectMCP(mcpUrl: string): Promise<MCPClientHandle> {
-  // Polyfill EventSource for Node.js environment
-  if (typeof globalThis.EventSource === 'undefined') {
-    const EventSourcePolyfill = (await import('eventsource')).default;
-    (globalThis as any).EventSource = EventSourcePolyfill;
-  }
-  
   const { Client } = await import("@modelcontextprotocol/sdk/client/index.js");
-  const { StreamableHTTPClientTransport } = await import("@modelcontextprotocol/sdk/client/streamable-http.js");
+  const { StreamableHTTPClientTransport } = await import("@modelcontextprotocol/sdk/client/streamableHttp.js");
   
   const transport = new StreamableHTTPClientTransport(new URL(mcpUrl));
-  const client = new Client({ name: "routeiq-mcp-client", version: "1.0.0" }, { capabilities: {} });
+  const client = new Client({ name: "routeiq-mcp-client", version: "1.0.0" });
   await client.connect(transport);
   return {
     listTools: async () => {

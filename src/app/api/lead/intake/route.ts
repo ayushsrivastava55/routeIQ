@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getComposio } from "@/lib/composio";
+import { getComposio, Composio } from "@/lib/composio";
+import { pushActivity } from "@/lib/persist";
+import { scoreLeadLLM } from "@/lib/ai";
+import type { Lead } from "@/lib/types";
 
 function splitName(full?: string) {
   const n = (full || "").trim();
@@ -99,6 +102,41 @@ export async function POST(request: NextRequest) {
       hubspotContactId = (createRes as any)?.data?.id || null;
     }
 
+    let aiScore: number | null = null;
+    try {
+      const ai = await scoreLeadLLM({ email, name, company, source, utm, metadata });
+      aiScore = ai.score;
+    } catch {}
+    const finalScore = typeof aiScore === "number" ? aiScore : score;
+
+    if (hubspotContactId != null) {
+      try {
+        await (composio.tools as any).proxyExecute({
+          toolkitSlug: "hubspot",
+          userId,
+          data: {
+            endpoint: `/crm/v3/objects/contacts/${hubspotContactId}`,
+            method: "PATCH",
+            body: { properties: { hs_lead_score: finalScore } },
+          },
+        });
+      } catch {}
+    }
+
+    try {
+      const leadLike: Lead = {
+        id: hubspotContactId || crypto.randomUUID(),
+        name: name || email.split("@")[0],
+        email,
+        company: company || undefined,
+        potential: finalScore,
+        status: "new",
+        createdAt: new Date().toISOString(),
+      };
+      const activity = await Composio.sendIntroEmail(leadLike);
+      pushActivity(activity);
+    } catch {}
+
     let enrichment: any = null;
     if (enrichmentToolkitSlug) {
       try {
@@ -163,7 +201,7 @@ export async function POST(request: NextRequest) {
       {
         ok: true,
         contactId: hubspotContactId,
-        score,
+        score: finalScore,
         enrichment,
       },
       { status: 200 }

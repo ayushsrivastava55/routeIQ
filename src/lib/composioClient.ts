@@ -3,6 +3,7 @@
 
 import type { Lead } from "@/lib/types";
 import { Composio as ComposioSDK } from "@composio/core";
+import { loadOwnerMap } from "@/lib/ownerMap";
 
 type RealClient = {
   email: { sendIntro: (lead: Lead) => Promise<void> };
@@ -231,9 +232,12 @@ export function getRealComposio(): RealClient | null {
       },
       async assignOwner(id, owner) {
         if (!CRM_ACCOUNT_ID) throw new Error("Set COMPOSIO_CRM_ACCOUNT_ID to use CRM via Composio");
-        const mapRaw = process.env.HUBSPOT_OWNER_MAP || "{}";
-        let map: Record<string, string> = {};
-        try { map = JSON.parse(mapRaw); } catch {}
+        // Load mapping from data/owner-map.json first, then env fallback
+        let map: Record<string, string> = loadOwnerMap();
+        if (!map || Object.keys(map).length === 0) {
+          const mapRaw = process.env.HUBSPOT_OWNER_MAP || "{}";
+          try { map = JSON.parse(mapRaw); } catch { map = {}; }
+        }
         const ownerId = map[owner];
         if (!ownerId) throw new Error("HubSpot owner mapping not found for " + owner);
         const composio = getSdk();
